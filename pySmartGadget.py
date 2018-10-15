@@ -87,7 +87,10 @@ class SHT31:
         self.peripheral.disconnect()
         
     def readDeviceName(self):
-        return self.characteristics['DeviceName'].read()
+        return self.characteristics['DeviceName'].read().decode('ascii')
+
+    def setDeviceName(self, name):
+        return self.characteristics['DeviceName'].write(name.encode('ascii'))
     
     def readTemperature(self):
         return struct.unpack('f', self.characteristics['Temperature'].read())[0]

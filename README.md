@@ -15,6 +15,7 @@ What's working so far:
     - logging interval
     - logged data (humidity and temperature)
   - writing data
+    - device name
     - synchronization timestamp
     - logger interval
 - notifications
