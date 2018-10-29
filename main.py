@@ -1,7 +1,9 @@
-from pySmartGadget import SHT31
+import pySmartGadget
 
 def main():
-    gadget =  SHT31("DC:82:71:D2:60:AF")
+    bleAddress = 'C3:77:1E:95:8E:E3'
+    print('connecting to:', bleAddress)
+    gadget = pySmartGadget.SHT31(bleAddress)
     print('connected')
 
     print('name: ', gadget.readDeviceName())
@@ -10,6 +12,7 @@ def main():
     print('Humidity: ', gadget.readHumidity())
 #     gadget.setLoggerIntervalMs(1000)
     print('LoggerInterval: ', gadget.readLoggerIntervalMs())
+    gadget.setSyncTimeMs()
     print('OldestTimestampMs: ', gadget.readOldestTimestampMs())
     print('NewestTimeStampMs: ', gadget.readNewestTimestampMs())
     
@@ -19,12 +22,10 @@ def main():
            
     try:
         while 1:
-            gadget.waitForNotifications(3)
-            print('readingData')
-            if False is gadget.isLogReadoutInProgress():
+            if False is gadget.waitForNotifications(5) or False is gadget.isLogReadoutInProgress():
                 print('Done')
                 break
-        
+            print('readingData')
     finally:
         gadget.disconnect()
         print('disconnected')

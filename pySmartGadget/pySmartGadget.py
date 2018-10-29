@@ -3,12 +3,11 @@ import struct
 import time
 
 class MyDelegate(DefaultDelegate):
-    parent = None
-    sustainedNotifications = {}
     
     def __init__(self, parent):
         DefaultDelegate.__init__(self)
         self.parent = parent
+        self.sustainedNotifications = {}
         self.sustainedNotifications['Temp'] = 0
         self.sustainedNotifications['Humi'] = 0
 
@@ -38,21 +37,25 @@ class MyDelegate(DefaultDelegate):
                 self.sustainedNotifications[typeData] = 2
                 if 1 < self.sustainedNotifications['Temp'] and 1 < self.sustainedNotifications['Humi']:
                     self.parent.loggingReadout = False
+                    self.parent.setTemperatureNotification(False)
+                    self.parent.setHumidityNotification(False)
              
 class SHT31:
-    characteristics = {}
-    newestTimeStampMs = 0
-    loggerInterval = 0
-    delegate = None
-    loggedData = {}
-    loggingReadout = False
 
-    def __init__(self, address = '', interface = None):
-        self.peripheral = Peripheral(address, addrType="random", iface=interface)
-
-        self.loggedData['Temp'] = {}
-        self.loggedData['Humi'] = {}
-
+    def __init__(self, addr = None, iface = None):
+        self.loggedData = {'Temp' : {}, 'Humi': {}}
+        self.newestTimeStampMs = 0
+        self.loggerInterval = 0
+        self.loggingReadout = False
+     
+        self.peripheral = Peripheral(addr, 'random', iface)
+        if addr is not None:
+            self.peripheral.setDelegate(MyDelegate(self))
+            self.getCharacteristics()
+        
+    
+    def getCharacteristics(self):
+        self.characteristics = {}
         # READ WRITE
         self.characteristics['DeviceName'] = self.peripheral.getCharacteristics(uuid=UUID("00002a00-0000-1000-8000-00805f9b34fb"))[0]
   
@@ -79,10 +82,12 @@ class SHT31:
         
         # READ NOTIFY
         self.characteristics['Temperature'] = self.peripheral.getCharacteristics(uuid=UUID("00002235-b38d-4985-720e-0f993a68ee41"))[0]
-                 
-        self.delegate = MyDelegate(self)      
-        self.peripheral.setDelegate(self.delegate)
-        
+    
+    def connect(self, addr, iface=None):
+        self.peripheral.setDelegate(MyDelegate(self))
+        self.peripheral.connect(addr, 'random', iface)
+        self.getCharacteristics()                 
+    
     def disconnect(self):
         self.peripheral.disconnect()
         
@@ -114,13 +119,20 @@ class SHT31:
         return int.from_bytes(self.characteristics['Battery'].read(), byteorder='little')
     
     def setSyncTimeMs(self, timestamp = time.time()):
-        self.characteristics['SyncTimeMs'].write(int(round(timestamp * 1000)).to_bytes(8, byteorder='little'))
+        timestampMs = int(round(timestamp * 1000))
+        self.characteristics['SyncTimeMs'].write(timestampMs.to_bytes(8, byteorder='little'))
 
     def readOldestTimestampMs(self):
         return int.from_bytes(self.characteristics['OldestTimeStampMs'].read(), byteorder='little')
 
+    def setOldestTimestampMs(self, value):
+        self.characteristics['OldestTimeStampMs'].write(value.to_bytes(8, byteorder='little'))
+
     def readNewestTimestampMs(self):
         return int.from_bytes(self.characteristics['NewestTimeStampMs'].read(), byteorder='little')
+
+    def setNewestTimestampMs(self, value):
+        self.characteristics['NewestTimeStampMs'].write(value.to_bytes(8, byteorder='little'))
     
     def readLoggerIntervalMs(self):
         return int.from_bytes(self.characteristics['LoggerIntervalMs'].read(), byteorder='little')
@@ -134,20 +146,24 @@ class SHT31:
             milliseconds = monthMs
         self.characteristics['LoggerIntervalMs'].write((int(milliseconds)).to_bytes(4, byteorder='little'))
     
-    def readLoggedDataInterval(self, startMs = 0, stopMs = int(round(time.time() * 1000))):
+    def readLoggedDataInterval(self, startMs = None, stopMs = None):
+        self.setSyncTimeMs()
+        time.sleep(1) # Sleep 1s to enable the gadget to set the SyncTime; otherwise 0 is read when readNewestTimestampMs is used
         self.setTemperatureNotification(True)
         self.setHumidityNotification(True)
         
-        self.setSyncTimeMs()
-        self.newestTimeStampMs = self.readNewestTimestampMs()
         self.loggerInterval = self.readLoggerIntervalMs()
-        self.characteristics['OldestTimeStampMs'].write(startMs.to_bytes(8, byteorder='little'))
-        self.characteristics['NewestTimeStampMs'].write(stopMs.to_bytes(8, byteorder='little'))
+        if startMs is not None:
+            self.setOldestTimestampMs(startMs)
+        if stopMs is not None:
+            self.setNewestTimestampMs(stopMs)
+            
+        self.newestTimeStampMs = self.readNewestTimestampMs()
         self.loggingReadout = True
         self.characteristics['StartLoggerDownload'].write((1).to_bytes(1, byteorder='little'))
 
-    def waitForNotifications(self, timeoutS):
-        self.peripheral.waitForNotifications(timeoutS)
+    def waitForNotifications(self, timeout):
+        return self.peripheral.waitForNotifications(timeout)
         
     def isLogReadoutInProgress(self):
         return self.loggingReadout
