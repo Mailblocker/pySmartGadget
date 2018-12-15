@@ -29,4 +29,7 @@ Take a look at the main.py example file. For scanning of BLE devices take a look
 
 # Additional information
 
+[Sensirion Homepage - SHT31 Smart Gadget Development Kit](https://www.sensirion.com/de/umweltsensoren/feuchtesensoren/development-kit/)
+
 [Github of Sensirion](https://github.com/Sensirion "Github of Sensirion")
+
