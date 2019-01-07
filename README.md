@@ -4,22 +4,20 @@ Python interface to Sensirion SmartGadget SHT31 based on bluepy.
 
 This project provides an API to access the functionality of the SmartGadget via BLE.
 What's working so far:
-  - connecting/disconnecting
-  - reading data
-    - device name
-    - battery status
-    - temperature
-    - humidity
-    - oldest & newest data timestamp
-    - logging interval
-    - logged data (humidity and temperature)
-  - writing data
-    - device name
-    - synchronization timestamp
-    - logger interval
-- control notifications
-    - temperature
-    - humidity
+  - Connecting
+  - Disconnecting
+  - Reading
+    - Device data: Device name, System ID, Model number, Serial number, Firmware revision, Hardware revision, Software revision, Manufacturer name
+    - Battery status
+    - Temperature & Humidity (actual values and logged data on device)
+    - Oldest & newest timestamp
+    - Logging interval
+  - Writing
+    - Device name
+    - Synchronization timestamp
+    - Logger interval
+- Control notifications
+    - Temperature & Humidity
 
 # Usage
 
