@@ -139,8 +139,8 @@ class SHT31():
     def readBattery(self):
         return int.from_bytes(self.__characteristics['Battery'].read(), byteorder='little')
     
-    def setSyncTimeMs(self, timestamp = time.time()):
-        timestampMs = int(round(timestamp * 1000))
+    def setSyncTimeMs(self, timestamp = None):
+        timestampMs = timestamp if timestamp else int(round(time.time() * 1000))
         self.__characteristics['SyncTimeMs'].write(timestampMs.to_bytes(8, byteorder='little'))
 
     def readOldestTimestampMs(self):
